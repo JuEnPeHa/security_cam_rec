@@ -16,13 +16,30 @@ Future<Map> getFileDataMap(String path) async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final multicastProbe = MulticastProbe();
-
-  await multicastProbe.probe();
-
-  for (var device in multicastProbe.onvifDevices) {
-    print(
-        '${device.name} ${device.location} ${device.hardware} ${device.xaddr}');
+  if (Platform.isWindows) {
+    final multicastProbe = MulticastProbe(timeout: 2);
+    try {
+      multicastProbe
+          .probe()
+          .catchError((e) {
+            print(e);
+          })
+          .timeout(
+            Duration(seconds: 1),
+          )
+          .then((value) {
+            multicastProbe.onvifDevices.forEach((element) {
+              print(
+                  '${element.name} ${element.location} ${element.hardware} ${element.xaddr}');
+            });
+          })
+          .onError((error, stackTrace) {
+            print(error);
+            print(stackTrace);
+          });
+    } catch (e) {
+      print(e);
+    }
   }
 
   final config = await getFileDataMap('lib/example/config.yaml');
